@@ -3,14 +3,66 @@ import { IonButtons, IonContent, IonHeader, IonPage, IonToolbar } from '@ionic/v
 import { IonIcon } from '@ionic/vue';
 import { logOutOutline} from 'ionicons/icons';
 import { useLoginStore } from '@/stores/loginStore';
+import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
+import { ref } from 'vue';
+
 
 const loginStore = useLoginStore();
 const workerData = loginStore.workerData;
+const scanedQr = ref('');
+const isScanning = ref(false);
 
 const handleLogout = () => {
   console.log('Wylogowanie:', workerData.name);
   loginStore.logout();
 }
+
+const startScan = async () => {
+  try {
+    const status = await BarcodeScanner.checkPermission({ force: true });
+    if (!status.granted) {
+      console.error('Brak uprawnień do aparatu');
+      return;
+    }
+
+    isScanning.value = true; // Ustaw skaner na aktywny
+    document.body.classList.add('scanner-active');
+
+    const options = {
+      formats: ['QR_CODE'],
+      torchOn: true,
+      torchOff: false,
+      drawSight: true,
+      disableSuccessBeep: false,
+      disableAnimations: true,
+      disableSuccessCheck: false,
+      returnImage: false,
+      resultDisplayDuration: 500,
+      closeCallback: () => {
+        closeScanner();
+      },
+    };
+    
+    const result = await BarcodeScanner.startScan(options);
+
+    if (result.hasContent) {
+      scanedQr.value = result.content;
+      alert(`Zeskanowany kod QR: ${result.content}`);
+    } else {
+      alert('Nie udało się zeskanować kodu QR.');
+    }
+  } catch (error) {
+    console.error('Błąd podczas skanowania:', error);
+  } finally {
+    closeScanner(); // Zatrzymaj skanowanie
+  }
+};
+
+const closeScanner = async () => {
+  await BarcodeScanner.stopScan(); // Zatrzymaj skanowanie
+  isScanning.value = false; // Zresetuj stan skanera
+  document.body.classList.remove('scanner-active');
+};
 </script>
 
 <template>
@@ -34,15 +86,26 @@ const handleLogout = () => {
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
-  <ion-content class="ion-padding"> 
+  <ion-content class="ion-padding" style="" > 
     
     <h1 class="helloTitle">Użyj skanera, aby zweryfikować klienta</h1>
     
     <div class="scanerContainer">
-      <ion-button @click="() => console.log('hej')" fill="clear">
+      <ion-button @click="startScan" fill="clear">
         <img src="/scan.svg" alt="Button Image" class="qr">
       </ion-button>
       <p class="buttonText">Kliknij aby uruchomić skaner</p>
+    </div>
+
+    <!-- Wyświetl zeskanowany kod QR -->
+    <div v-if="scanedQr" class="scanResult">
+      <p>Zeskanowany kod QR: {{ scanedQr }}</p>
+    </div>
+    <p>Zeskanowany kod QR: {{ scanedQr || 'qrhere' }}</p>
+
+    <!-- Przycisk zamykający skaner, gdy jest aktywny -->
+    <div v-if="isScanning" class="scanner-close-button">
+      <ion-button @click="closeScanner" color="danger">Zamknij skaner</ion-button>
     </div>
     
     <div class="bottomNavigation">
@@ -59,14 +122,13 @@ const handleLogout = () => {
 
 
 <style scoped>
-
-.qr{
+.qr {
   border-radius: 25px;
   background-color: #f5f5f5;
   width: 100%;
 }
 
-.scanerContainer{
+.scanerContainer {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -78,7 +140,7 @@ const handleLogout = () => {
   margin: 2em 0;
 }
 
-.buttonText{
+.buttonText {
   color: white;
   font-size: 1.2em;
   margin-top: 1em;
@@ -86,17 +148,17 @@ const handleLogout = () => {
 
 .avatarButton {
   width: 100%; 
-  max-width:4em; 
+  max-width: 4em; 
   height: auto; 
   border-radius: 50%;
 }
 
-.helloTitle{
+.helloTitle {
   font-size: 2em;
   line-height: 1.4em;
 }
 
-.bottomNavigation{
+.bottomNavigation {
   display: flex;
   flex-direction: row;
   gap: 12px;
@@ -106,5 +168,20 @@ const handleLogout = () => {
   bottom: 1em;
   left: 0;
   width: 100%;
+}
+
+.scanner-close-button {
+  display: flex;
+  justify-content: center;
+  margin-top: 1em;
+}
+
+.scanner-active ion-header,
+.scanner-active ion-content {
+  display: none;
+}
+
+body.scanner-active {
+  background: transparent;
 }
 </style>

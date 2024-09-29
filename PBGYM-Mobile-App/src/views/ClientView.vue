@@ -15,19 +15,17 @@ const handleLogout = () => {
   loginStore.logout();
 }
 
-const value = ref(memberLocal.id + '')
-const level = ref<Level>('M')
-const size = ref(350)
-const renderAs = ref<RenderAs>('svg')
-const background = ref('#EDF1FC')
-const foreground = ref('#1E41B1')
-const margin = ref(1)
+const value = ref('2')
+const level = ref<Level>('H') // Zwiększ poziom jakości kodu QR
+const size = ref(400) // Zwiększ rozmiar kodu QR
+const renderAs = ref<RenderAs>('svg') // Użyj SVG jako format renderowania
+const background = ref('white') // Ustaw tło kodu QR na białe
+const foreground = ref('black') // Ustaw kolor kodu QR na czarny
+const margin = ref(2) // Zwiększ margines kodu QR
 const imageSettings = ref<ImageSettings>({
   src: '/logo-blue.svg',
-  width: 110,
-  height: 90,
-  // x: 10,
-  // y: 10,
+  width: 120,
+  height: 100,
   excavate: true,
 })
 
