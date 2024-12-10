@@ -112,11 +112,6 @@ const closeScanner = async () => {
           APP 
         </ion-title>
       </ion-buttons>
-      <ion-buttons slot="end">
-        <ion-button @click="() => console.log('hej')" style="padding: 0; border: none;">
-          <img src="/avatar.jpg" alt="Button Image" class="avatarButton" style="">
-        </ion-button>
-      </ion-buttons>
     </ion-toolbar>
   </ion-header>
   <ion-content class="ion-padding" style="" > 
@@ -130,12 +125,10 @@ const closeScanner = async () => {
       <p class="buttonText">Kliknij aby uruchomić skaner</p>
     </div>
 
-    <!-- Wyświetl zeskanowany kod QR -->
     <div v-if="scanedQr" class="scanResult">
       <p>Zeskanowany kod QR: {{ scanedQr }}</p>
     </div>
 
-    <!-- Przycisk zamykający skaner, gdy jest aktywny -->
     <div v-if="isScanning" class="scanner-close-button">
       <ion-button @click="closeScanner" color="danger">Zamknij skaner</ion-button>
     </div>
