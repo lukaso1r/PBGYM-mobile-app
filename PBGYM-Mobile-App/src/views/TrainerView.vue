@@ -1,20 +1,22 @@
 <script setup lang="ts">
 import { IonButtons, IonContent, IonHeader, IonPage, IonToolbar, IonAlert, IonButton, IonModal } from '@ionic/vue';
 import { IonIcon } from '@ionic/vue';
-import { logOutOutline, refreshCircle, refreshOutline, personOutline, timeOutline, cardOutline } from 'ionicons/icons';
+import { logOutOutline, personOutline, refreshOutline, timeOutline, calendarOutline
+} from 'ionicons/icons';
 import { useLoginStore } from '@/stores/loginStore';
 import QrcodeVue from 'qrcode.vue'
 import type { Level, RenderAs, ImageSettings } from 'qrcode.vue'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { useWorkerStore } from '@/stores/workerStore';
+import {  onMounted, ref } from 'vue'
 import { useGymCount } from '@/stores/gymCount';
-import { formatDateToPolish, calculateDaysLeft, formatDateTime } from '../../utils/date';
+import { formatDateTime } from '../../utils/date';
+
+// const modal = ref<HTMLIonModalElement | null>(null);
 
 const loginStore = useLoginStore();
-const workerStore = useWorkerStore();
 const gymCountStore = useGymCount();
 
-const gymCount = ref(gymCountStore.gymCount);
+const isMembersOpen = ref(false);
+const isClassesOpen = ref(false);
 
 const memberLocal = JSON.parse(localStorage.getItem('memberData') || '{}');
 
@@ -36,32 +38,15 @@ const imageSettings = ref<ImageSettings>({
   excavate: true,
 })
 
-const alertButtons = ['Zamknij'];
+const getClassesMembers = (classId: number) => {
+  loginStore.getGroupClassMembers(classId);
+  isMembersOpen.value = true;
+}
 
-let intervalId: NodeJS.Timeout | null = null;
-
-const startFetchingGymCount = () => {
-  if (!loginStore.token) return;
-  
-  intervalId = setInterval(() => {
-    if (!loginStore.token) return;
-    gymCountStore.getGymCount();
-    gymCount.value = gymCountStore.gymCount;
-  }, 3000); // Co 3 sekundy
-};
 
 onMounted(() => {
   gymCountStore.getGymCount();
-  loginStore.getMemberActivePass(memberLocal.email);
-  loginStore.getMemberGymEntryHistory(memberLocal.email);
-  loginStore.getMemberUpcomingClasses(memberLocal.email);
-
-});
-
-onBeforeUnmount(() => {
-  if (intervalId) {
-    clearInterval(intervalId);
-  }
+  loginStore.getTrainerUpcomingClasses(memberLocal.email);
 });
 
 
@@ -81,11 +66,10 @@ onBeforeUnmount(() => {
           <br />
           APP 
         </ion-title>
-
       </ion-buttons>
       <ion-buttons slot="end">
-        <ion-button id="open-modal" style="padding: 0; border: none;">
-          <ion-icon slot="end" :icon="cardOutline"></ion-icon>
+        <ion-button id="open-modal2" @click="isClassesOpen = true" style="padding: 0; border: none;">
+          <ion-icon slot="end" :icon="calendarOutline"></ion-icon>
         </ion-button>
       </ion-buttons>
     </ion-toolbar>
@@ -124,56 +108,45 @@ onBeforeUnmount(() => {
       </ion-button>
     </div>
 
+    <ion-modal ref="modal" trigger="open-modal2" :is-open="isClassesOpen" :initial-breakpoint="0.25" :breakpoints="[0, 0.25, 0.5, 0.75]">
+        <ion-content class="ion-padding">
+          <ion-list>
+            <ion-item v-if="loginStore.trainerGroupClassesUpcoming" class="ion-no-padding ion-no-margin">
+              <ul style="list-style: none;" class="ion-no-padding ">
+                <h3 class="ion-padding-bottom">Nadchodzące zajęcia grupowe</h3>
+                <li class="groupClass" v-for="groupClass in loginStore.trainerGroupClassesUpcoming" :key="groupClass.id" @click="getClassesMembers(groupClass.id)">
+                  <p style="width: 100%; margin: 0;">{{groupClass.title}}</p>
+                  <p style=" margin: 0;">{{formatDateTime(groupClass.dateStart)}}</p>
+                  <div class="timeWIthIcon"><ion-icon style="padding: 0; color:var(--ion-color-primary)" :icon="timeOutline" color="primary" class="ion-no-padding"></ion-icon><p>{{groupClass.durationInMinutes}} min</p></div>
+                </li>
+              </ul>
+            </ion-item>
+            <ion-item v-else class="ion-no-padding ion-no-margin">
+              <h2>Nie masz zaplanowanych zajęć grupowych</h2>
+            </ion-item>
+          </ion-list>
+        </ion-content>
+      </ion-modal>
 
-
-    <ion-modal ref="modal" trigger="open-modal" :initial-breakpoint="0.25" :breakpoints="[0, 0.25, 0.5, 0.75]">
-      <ion-content class="ion-padding">
-        <ion-list>
-          <ion-item class="ion-no-padding ion-no-margin">
-            <ion-label v-if="loginStore.memberActivePass">
-              <h2>Twój aktualny karnet</h2>
-              <p>Nazwa: <span class="passDetail">{{loginStore.memberActivePass.title}}</span></p>
-              <p>Data aktywacji: <span class="passDetail">{{formatDateToPolish(loginStore.memberActivePass.dateStart)}}</span></p>
-              <p>Data wygaśnięcia: <span class="passDetail">{{formatDateToPolish(loginStore.memberActivePass.dateEnd)}}</span></p>
-              <p>Pozostało dni: <span class="passDetail">{{calculateDaysLeft(loginStore.memberActivePass.dateStart, loginStore.memberActivePass.dateEnd)}}</span></p>
-              <p>Miesięczna cena: <span class="passDetail">{{loginStore.memberActivePass.monthlyPrice}} zł</span></p>
-            </ion-label>
-            <ion-label v-else>
-              <h2>Nie posiadasz aktywnego karnetu</h2>
-            </ion-label>
-          </ion-item>
-          <ion-item v-if="loginStore.memberGymEntryHistory" class="ion-no-padding ion-no-margin">
-            <ul style="list-style: none;" class="ion-no-padding ">
-              <template v-if="!Object.values(loginStore.memberGymEntryHistory).some(value => Number(value) > 0)">Brak historii wejść</template>
-              <h3 v-else>Historia wejść</h3>
-              <li class="historyEntry" v-for="(minutes, date) in loginStore.memberGymEntryHistory" :key="date" >
-                  <template v-if="minutes>0">
-                      <p>{{formatDateToPolish(date as unknown as string)}}</p>
-                      <div class="timeWIthIcon">
-                          <ion-icon :icon="timeOutline" color="primary"></ion-icon>
-                          <p>{{minutes}} min</p>
-                      </div>
-                  </template>
-              </li>
-            </ul>
-          </ion-item>
-          <ion-item v-if="loginStore.memberGroupClassesUpcoming" class="ion-no-padding ion-no-margin">
-            <ul style="list-style: none;" class="ion-no-padding ">
-              <h3 class="ion-padding-bottom">Nadchodzące zajęcia grupowe</h3>
-              <li class="groupClass" v-for="groupClass in loginStore.memberGroupClassesUpcoming" :key="groupClass.id">
-                <p style="width: 100%; margin: 0;">{{groupClass.title}}</p>
-                <p style=" margin: 0;">{{formatDateTime(groupClass.dateStart)}}</p>
-                <div class="timeWIthIcon"><ion-icon style="padding: 0; color:var(--ion-color-primary)" :icon="timeOutline" color="primary" class="ion-no-padding"></ion-icon><p>{{groupClass.durationInMinutes}} min</p></div>
-              </li>
-            </ul>
-          </ion-item>
-          <ion-item v-else class="ion-no-padding ion-no-margin">
-            <h2>Nie masz zaplanowanych zajęć grupowych</h2>
-          </ion-item>
-        </ion-list>
-      </ion-content>
-    </ion-modal>
-  </ion-content>
+      <ion-modal :is-open="isMembersOpen">
+        <ion-header>
+          <ion-toolbar>
+            <ion-title class="ion-padding-start">Lista zapisanych klientów</ion-title>
+            <ion-buttons slot="end">
+              <ion-button @click="isMembersOpen = false">Zamknij</ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content class="ion-no-padding ion-padding-top ion-no-margin">
+            <ion-list lines="full" class="ion-no-padding">
+                <ion-item v-for="(member, index) in loginStore.groupClassMembers" :key="member.id">
+                    <ion-label>{{ (index+1) }}. {{member.name}} {{member.surname}}</ion-label>
+                    <p>{{member.email}}</p>
+                </ion-item>
+            </ion-list>
+        </ion-content>
+      </ion-modal>
+    </ion-content>
 </ion-page>
 
 </template>

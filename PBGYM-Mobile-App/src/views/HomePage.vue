@@ -1,12 +1,12 @@
 <template>
   <ion-page>
-    <ion-content :fullscreen="true" class="ion-padding-bottom">
+    <ion-content :fullscreen="true" class="ion-no-padding-bottom" style="height: 100vh; max-height: 100vh; padding: 0;">
       <div id="container" class="ion-no-padding">
-        <img src="../../public/backgrounddwa.jpg" alt="PBGYM Logo">
+        <!-- <img src="../../public/backgrounddwa.jpg" alt="PBGYM Logo"> -->
         <div class="ion-padding textContainer">
-          <div class="welcomeTitle">Wherever you are health is number one</div>
-          <p class="welcomeParaghraph">There is no instant way to a healthy life</p>
-          <ion-button @click="() => router.push({name: 'Login'})">Dołącz do nas!</ion-button>
+            <div class="welcomeTitle">Trening to klucz do dobrego samopoczucia</div>
+            <p class="welcomeParaghraph">Cieszymy się, że wracasz do treningu</p>
+            <ion-button @click="() => router.push({name: 'Login'})">Dołącz do nas!</ion-button>
         </div>
       </div>
     </ion-content>
@@ -34,8 +34,15 @@ const router = useRouter();
 #container {
   text-align: center;
   width: 100%;
-  max-height: 100svh;
-  
+  max-height: 100vh;
+  height: 100vh;
+  background: url(/public/backgrounddwa.jpg) no-repeat;
+  background-size: contain;
+  background-position-y: top;
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  justify-content: end;
 }
 
 #container strong {
@@ -69,6 +76,11 @@ const router = useRouter();
   display: flex;
   flex-direction: column;
   gap: 15px;
+  background: white;
+}
+
+#container img{
+  max-height: 100%;
 }
 
 

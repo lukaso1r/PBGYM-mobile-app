@@ -1,13 +1,12 @@
- 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
+import { useRouter, } from 'vue-router';
 import { IonContent, IonPage, IonInput, IonItem, IonButton, IonToast } from '@ionic/vue';
 import { useLoginStore } from '@/stores/loginStore';
 
 // Przechowywanie stanu pól
 const email = ref('test1@member.com');
-const password = ref('12345678');
+const password = ref('Haslo@123');
 
 // Obsługa walidacji
 const emailError = ref('');
@@ -37,17 +36,25 @@ async function handleLogin() {
     if (!emailError.value && !passwordError.value) {
         try {
             await loginStore.login(email.value, password.value);
-            if (loginStore.userType === 'Member') {
-                // router.push({ name: 'Client' });
-            } else if (loginStore.userType === 'Worker') {
-                // router.push({ name: 'Worker' });
-            }
         } catch (error) {
             console.error('Błąd logowania:', error);
             setOpen(true);
         }
     }
 }
+
+onMounted(() => {
+    if(localStorage.getItem('token')) {
+        if(localStorage.getItem('userType') === 'Worker') {
+            email.value = '';
+            password.value = '';
+        } else if(localStorage.getItem('userType') === 'Member') {
+            router.push({name: 'Member'});
+        } else if(localStorage.getItem('userType') === 'Trainer') {
+            router.push({name: 'Trainer'});
+        }
+    } 
+})
 
 </script>
 

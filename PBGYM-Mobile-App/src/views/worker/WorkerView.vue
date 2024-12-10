@@ -3,14 +3,37 @@ import { IonButtons, IonContent, IonHeader, IonPage, IonToolbar } from '@ionic/v
 import { IonIcon } from '@ionic/vue';
 import { logOutOutline} from 'ionicons/icons';
 import { useLoginStore } from '@/stores/loginStore';
+import { useWorkerStore } from '@/stores/workerStore';
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
-import { ref } from 'vue';
+import { ref, watchEffect } from 'vue';
 
 
 const loginStore = useLoginStore();
+const workerStore = useWorkerStore();
 const workerData = loginStore.workerData;
 const scanedQr = ref('');
 const isScanning = ref(false);
+const gymCount = ref(0);
+
+// import { onMounted, onUnmounted } from 'vue';
+
+// let intervalId;
+
+// onMounted(() => {
+//   intervalId = setInterval(() => {
+//     workerStore.getGymCount(loginStore.token);
+//     gymCount.value = workerStore.gymCount;
+//   }, 3000);
+// });
+
+// onUnmounted(() => {
+//   clearInterval(intervalId);
+// });
+
+watchEffect(() => {
+  workerStore.getGymCount(loginStore.token);
+  gymCount.value = workerStore.gymCount;
+});
 
 const handleLogout = () => {
   console.log('Wylogowanie:', workerData.name);
@@ -40,6 +63,7 @@ const startScan = async () => {
       resultDisplayDuration: 500,
       closeCallback: () => {
         closeScanner();
+        
       },
     };
     
@@ -47,14 +71,21 @@ const startScan = async () => {
 
     if (result.hasContent) {
       scanedQr.value = result.content;
-      alert(`Zeskanowany kod QR: ${result.content}`);
+      console.log('Zeskanowany kod QR:', result.content);
+      console.log('loginStore.token:', loginStore.token);
+      workerStore.qrScan(result.content, loginStore.token);
+      workerStore.getGymCount(loginStore.token);
+      gymCount.value = workerStore.gymCount;
+
     } else {
-      alert('Nie udało się zeskanować kodu QR.');
+      // alert('Nie udało się zeskanować kodu QR.');
     }
   } catch (error) {
     console.error('Błąd podczas skanowania:', error);
   } finally {
     closeScanner(); // Zatrzymaj skanowanie
+    workerStore.getGymCount(loginStore.token);
+    gymCount.value = workerStore.gymCount;
   }
 };
 
@@ -63,6 +94,8 @@ const closeScanner = async () => {
   isScanning.value = false; // Zresetuj stan skanera
   document.body.classList.remove('scanner-active');
 };
+
+
 </script>
 
 <template>
@@ -101,11 +134,17 @@ const closeScanner = async () => {
     <div v-if="scanedQr" class="scanResult">
       <p>Zeskanowany kod QR: {{ scanedQr }}</p>
     </div>
-    <p>Zeskanowany kod QR: {{ scanedQr || 'qrhere' }}</p>
 
     <!-- Przycisk zamykający skaner, gdy jest aktywny -->
     <div v-if="isScanning" class="scanner-close-button">
       <ion-button @click="closeScanner" color="danger">Zamknij skaner</ion-button>
+    </div>
+
+    <div v-if="gymCount" class="scanResult">
+      <p>Liczba osób na siłowni: {{ gymCount }}</p>
+    </div>
+    <div v-else>
+      <p>Brak danych o liczbie osób w siłowni</p>
     </div>
     
     <div class="bottomNavigation">

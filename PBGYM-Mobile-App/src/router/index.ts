@@ -4,6 +4,7 @@ import ClientView from '@/views/ClientView.vue'
 import WorkerView from '../views/worker/WorkerView.vue'
 import HomePage from '../views/HomePage.vue'
 import LoginPage from '@/views/LoginPage.vue';
+import TrainerView from '@/views/TrainerView.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -29,9 +30,12 @@ const routes: Array<RouteRecordRaw> = [
     path: '/login',
     name: 'Login',
     component: LoginPage
+  },
+  {
+    path: '/trainer',
+    name: 'Trainer',
+    component: TrainerView
   }
-
-
 ]
 
 const router = createRouter({
