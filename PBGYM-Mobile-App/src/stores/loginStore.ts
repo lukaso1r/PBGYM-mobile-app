@@ -27,6 +27,7 @@ export const useLoginStore = defineStore('loginStore', () => {
     const memberGroupClassesUpcoming = ref<any>(null);
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     const trainerGroupClassesUpcoming = ref<any>(null);
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     const groupClassMembers = ref<any>(null);
 
 

@@ -1,15 +1,17 @@
 <script setup>
 import { IonButtons, IonContent, IonHeader, IonPage, IonToolbar } from '@ionic/vue';
 import { IonIcon } from '@ionic/vue';
-import { logOutOutline} from 'ionicons/icons';
+import { logOutOutline, refreshOutline} from 'ionicons/icons';
 import { useLoginStore } from '@/stores/loginStore';
 import { useWorkerStore } from '@/stores/workerStore';
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
 import { ref, watchEffect } from 'vue';
+import { useGymCount } from '@/stores/gymCount';
 
 
 const loginStore = useLoginStore();
 const workerStore = useWorkerStore();
+const gymCountStore = useGymCount();
 const workerData = loginStore.workerData;
 const scanedQr = ref('');
 const isScanning = ref(false);
@@ -133,11 +135,10 @@ const closeScanner = async () => {
       <ion-button @click="closeScanner" color="danger">Zamknij skaner</ion-button>
     </div>
 
-    <div v-if="gymCount" class="scanResult">
-      <p>Liczba osób na siłowni: {{ gymCount }}</p>
-    </div>
-    <div v-else>
-      <p>Brak danych o liczbie osób w siłowni</p>
+    <div class="gymCountContainer">
+      <p v-if="gymCountStore.gymCount">Liczba osób na siłowni: {{ gymCountStore.gymCount }}</p>
+      <p v-else>Brak danych o liczbie osób na siłowni</p>
+      <ion-icon @click="gymCountStore.getGymCount" :icon="refreshOutline" color="primary"></ion-icon>
     </div>
     
     <div class="bottomNavigation">
@@ -158,6 +159,17 @@ const closeScanner = async () => {
   border-radius: 25px;
   background-color: #f5f5f5;
   width: 100%;
+}
+
+.gymCountContainer{
+
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+
+
 }
 
 .scanerContainer {
